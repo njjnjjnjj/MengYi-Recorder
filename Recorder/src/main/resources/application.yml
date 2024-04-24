@@ -9,6 +9,8 @@ logging:
 recorder:
   detector:
     sample-rate: 44100
-    threshold-dB: 35
+    threshold-dB: 20
     buffer-size: 2048
-    db-queue-size: 10
+    db-queue-size: 20
+  record-time: 10
+  record-file-path: D:\MYR

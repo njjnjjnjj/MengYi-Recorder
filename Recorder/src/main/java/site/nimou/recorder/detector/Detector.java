@@ -33,7 +33,8 @@ public class Detector extends Thread {
     // 分贝值队列长度
     private final int dbQueueSize;
     // 回调函数
-    private final DetectorCallBack detectorCallBack;
+    @Setter
+    private DetectorCallBack detectorCallBack;
     // 检测标识符
     @Setter
     private boolean detectFlag = true;
@@ -43,12 +44,11 @@ public class Detector extends Thread {
 
     private final Logger logger = LoggerFactory.getLogger(Detector.class);
 
-    public Detector(DetectorConfig detectorConfig, DetectorCallBack detectorCallBack) {
+    public Detector(DetectorConfig detectorConfig) {
         this.sampleRate = detectorConfig.getSampleRate();
         this.thresholdDB = detectorConfig.getThresholdDB();
         this.bufferSize = detectorConfig.getBufferSize();
         this.dbQueueSize = detectorConfig.getDbQueueSize();
-        this.detectorCallBack = detectorCallBack;
         this.setName(THREAD_NAME_PREFIX + this.getId());
     }
 
@@ -66,7 +66,6 @@ public class Detector extends Thread {
             // 分贝值队列，仅保存近期5个分贝值
             boolean recording = false;
             byte[] buffer = new byte[bufferSize];
-            double lastDb = 0;
             TargetDataLine line = RecorderUtil.getTargetDataLine(sampleRate);
             while (detectFlag) {
                 line.read(buffer, 0, buffer.length);
@@ -83,7 +82,8 @@ public class Detector extends Thread {
                     // 调用回调函数
                     detectorCallBack.onSoundDetected();
                 }
-                lastDb = db;
+                // 等待500毫秒
+                Thread.sleep(500);
             }
         } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
@@ -121,7 +121,9 @@ public class Detector extends Thread {
         for (Double db : dbQueue) {
             sum += db;
         }
-        return sum / dbQueue.size();
+        double v = sum / dbQueue.size();
+        logger.debug("平均音量：{}", v);
+        return v;
     }
 
 }
