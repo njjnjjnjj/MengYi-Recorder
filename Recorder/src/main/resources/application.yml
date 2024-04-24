@@ -1,0 +1,14 @@
+spring:
+  application:
+    name:
+      Recorder
+logging:
+  level:
+    root: info
+    site.nimou.recorder: debug
+recorder:
+  detector:
+    sample-rate: 44100
+    threshold-dB: 35
+    buffer-size: 2048
+    db-queue-size: 10
