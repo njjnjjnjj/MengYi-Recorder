@@ -14,6 +14,9 @@ import site.nimou.recorder.detector.Detector;
 import site.nimou.recorder.recorder.Recorder;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @SpringBootApplication
 @EnableConfigurationProperties
@@ -25,10 +28,13 @@ public class RecorderApplication {
     @Resource
     private DetectorConfig detectorConfigBean;
     private static DetectorConfig detectorConfig;
-
     @Resource
     private RecorderConfig recorderConfigBean;
     private static RecorderConfig recorderConfig;
+
+    private static final Lock detectorAndRecorderLock = new ReentrantLock();
+    private static final Condition detectorAndRecorderCondition = detectorAndRecorderLock.newCondition();
+
 
     @PostConstruct
     public void init() {
@@ -41,11 +47,17 @@ public class RecorderApplication {
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
         Recorder recorder = new Recorder(recorderConfig);
+        recorder.setLock(detectorAndRecorderLock);
+        recorder.setCondition(detectorAndRecorderCondition);
         Detector detector = new Detector(detectorConfig);
+        detector.setLock(detectorAndRecorderLock);
+        detector.setCondition(detectorAndRecorderCondition);
 
         recorder.setRecorderCallBack(filePath -> {
             // 录音完成后，重新开始声音检测
             logger.debug("录音完成，文件路径：{}", filePath);
+            detectorAndRecorderCondition.signal();
+            detector.restartDetect();
         });
         detector.setDetectorCallBack(() -> {
             // 检测到声音后，开启录音线程

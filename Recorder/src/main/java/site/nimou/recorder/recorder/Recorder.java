@@ -15,6 +15,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 
 /**
  * 录音器
@@ -31,6 +33,11 @@ public class Recorder extends Thread {
     @Setter
     private RecorderCallBack recorderCallBack;
 
+    @Setter
+    private Lock lock;
+    @Setter
+    private Condition condition;
+
     private final Logger logger = LoggerFactory.getLogger(Recorder.class);
 
 
@@ -46,6 +53,7 @@ public class Recorder extends Thread {
 
     private void startRecord() {
         try {
+            lock.lock();
             logger.debug("开始录音...");
             File audioFile = new File(recordFilePath + File.separator + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".wav");
             TargetDataLine line = RecorderUtil.getTargetDataLine(44100);
@@ -61,8 +69,17 @@ public class Recorder extends Thread {
             }, recordTime * 1000L);
             AudioSystem.write(ais, AudioFileFormat.Type.WAVE, audioFile);
             recorderCallBack.onRecordComplete(audioFile.getAbsolutePath());
+            // 录音完成后，阻塞
+            condition.await();
         } catch (Exception e) {
             e.printStackTrace();
+        }finally {
+            lock.unlock();
+            try {
+                condition.signal();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

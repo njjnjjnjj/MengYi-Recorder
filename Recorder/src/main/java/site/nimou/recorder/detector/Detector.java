@@ -9,6 +9,8 @@ import site.nimou.recorder.util.RecorderUtil;
 import javax.sound.sampled.TargetDataLine;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 
 /**
  * 声音检测器
@@ -42,7 +44,28 @@ public class Detector extends Thread {
     // 分贝值队列
     Queue<Double> dbQueue = new LinkedList<>();
 
+    @Setter
+    private Lock lock;
+    @Setter
+    private Condition condition;
+
     private final Logger logger = LoggerFactory.getLogger(Detector.class);
+
+    // 分贝值队列，仅保存近期5个分贝值
+    boolean recording = false;
+    byte[] buffer;
+    TargetDataLine line;
+
+
+    public void init() {
+        buffer = new byte[bufferSize];
+        line = RecorderUtil.getTargetDataLine(sampleRate);
+    }
+
+    public void restartDetect() {
+        logger.debug("重新开始检测...");
+        init();
+    }
 
     public Detector(DetectorConfig detectorConfig) {
         this.sampleRate = detectorConfig.getSampleRate();
@@ -54,6 +77,7 @@ public class Detector extends Thread {
 
     @Override
     public void run() {
+        init();
         startDetect();
     }
 
@@ -62,12 +86,9 @@ public class Detector extends Thread {
      */
     public void startDetect() {
         try {
+            lock.lock();
             logger.debug("开始检测音量...");
-            // 分贝值队列，仅保存近期5个分贝值
-            boolean recording = false;
-            byte[] buffer = new byte[bufferSize];
-            TargetDataLine line = RecorderUtil.getTargetDataLine(sampleRate);
-            while (detectFlag) {
+            while (true) {
                 line.read(buffer, 0, buffer.length);
                 double db = calculateDB(buffer);
                 addDBToQueue(db);
@@ -81,12 +102,15 @@ public class Detector extends Thread {
                     line.close();
                     // 调用回调函数
                     detectorCallBack.onSoundDetected();
+                    condition.await();
                 }
                 // 等待500毫秒
                 Thread.sleep(500);
             }
         } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
+        } finally {
+            lock.unlock();
         }
     }
 
