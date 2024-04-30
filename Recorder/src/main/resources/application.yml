@@ -9,7 +9,7 @@ logging:
 recorder:
   detector:
     sample-rate: 44100
-    threshold-dB: 20
+    threshold-dB: 15
     buffer-size: 2048
     db-queue-size: 20
   record-time: 10

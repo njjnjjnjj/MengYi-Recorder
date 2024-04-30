@@ -43,31 +43,38 @@ public class RecorderApplication {
     }
 
     public static void main(String[] args) {
+        logger.info("程序启动");
         SpringApplication.run(RecorderApplication.class, args);
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
+        logger.debug("构造检测器与录音器");
         Recorder recorder = new Recorder(recorderConfig);
         recorder.setLock(detectorAndRecorderLock);
         recorder.setCondition(detectorAndRecorderCondition);
         Detector detector = new Detector(detectorConfig);
         detector.setLock(detectorAndRecorderLock);
         detector.setCondition(detectorAndRecorderCondition);
-
         recorder.setRecorderCallBack(filePath -> {
             // 录音完成后，重新开始声音检测
-            logger.debug("录音完成，文件路径：{}", filePath);
+            logger.info("录音完成，文件路径：{}", filePath);
             detectorAndRecorderCondition.signal();
             detector.restartDetect();
         });
         detector.setDetectorCallBack(() -> {
             // 检测到声音后，开启录音线程
-            logger.debug("检测到声音，开始录音...");
-            recorder.start();
+            logger.info("检测到声音");
+            // 如果recorder线程未启动则启动，否则唤醒
+            if (!recorder.isAlive()) {
+                recorder.start();
+            } else {
+                detectorAndRecorderCondition.signal();
+            }
         });
+        logger.debug("检测器与录音器构造完成");
         detector.start();
-
-        // 阻塞主线程
         try {
+            // 阻塞主线程
+            logger.debug("阻塞主线程，保持程序运行...");
             countDownLatch.await();
         } catch (InterruptedException e) {
             logger.error(e.getMessage(), e);

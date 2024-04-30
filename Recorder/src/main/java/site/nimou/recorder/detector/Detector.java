@@ -58,12 +58,13 @@ public class Detector extends Thread {
 
 
     public void init() {
+        logger.debug("初始化检测器");
         buffer = new byte[bufferSize];
         line = RecorderUtil.getTargetDataLine(sampleRate);
     }
 
     public void restartDetect() {
-        logger.debug("重新开始检测...");
+        logger.info("重新开始检测...");
         init();
     }
 

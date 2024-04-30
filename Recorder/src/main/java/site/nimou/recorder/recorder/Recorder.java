@@ -53,33 +53,30 @@ public class Recorder extends Thread {
 
     private void startRecord() {
         try {
-            lock.lock();
-            logger.debug("开始录音...");
-            File audioFile = new File(recordFilePath + File.separator + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".wav");
-            TargetDataLine line = RecorderUtil.getTargetDataLine(44100);
-            // 录制指定时间
-            AudioInputStream ais = new AudioInputStream(line);
-            Timer timer = new Timer();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    line.stop();
-                    line.close();
-                }
-            }, recordTime * 1000L);
-            AudioSystem.write(ais, AudioFileFormat.Type.WAVE, audioFile);
-            recorderCallBack.onRecordComplete(audioFile.getAbsolutePath());
-            // 录音完成后，阻塞
-            condition.await();
+            while (true){
+                lock.lock();
+                logger.info("开始录音...");
+                File audioFile = new File(recordFilePath + File.separator + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".wav");
+                TargetDataLine line = RecorderUtil.getTargetDataLine(44100);
+                // 录制指定时间
+                AudioInputStream ais = new AudioInputStream(line);
+                Timer timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        line.stop();
+                        line.close();
+                    }
+                }, recordTime * 1000L);
+                AudioSystem.write(ais, AudioFileFormat.Type.WAVE, audioFile);
+                recorderCallBack.onRecordComplete(audioFile.getAbsolutePath());
+                // 录音完成后，阻塞
+                condition.await();
+            }
         } catch (Exception e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             lock.unlock();
-            try {
-                condition.signal();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
     }
 }
