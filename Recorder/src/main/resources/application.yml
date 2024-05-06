@@ -14,3 +14,7 @@ recorder:
     db-queue-size: 20
   record-time: 10
   record-file-path: D:\MYR
+file:
+  minio:
+    accessKey: 5LgBpCWx4NutbR1MJDCa
+    secretKey: rmpgQx3oabcVUgvcG61DUXNxx92XKFgauFTodtid
