@@ -4,11 +4,7 @@ import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.UploadObjectArgs;
-import io.minio.errors.*;
-
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import io.minio.errors.MinioException;
 
 /**
  * @author Ni Jiajun njj1108@outlook.com

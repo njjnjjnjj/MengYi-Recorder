@@ -6,6 +6,14 @@ logging:
   level:
     root: info
     site.nimou.recorder: debug
+  charset:
+    file: utf-8
+    console: utf-8
+  file:
+    name: ./logs/recorderLog.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
 recorder:
   detector:
     sample-rate: 44100

@@ -2,6 +2,7 @@ package site.nimou.recorder;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -13,6 +14,9 @@ import site.nimou.recorder.config.RecorderConfig;
 import site.nimou.recorder.detector.Detector;
 import site.nimou.recorder.recorder.Recorder;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -40,6 +44,20 @@ public class RecorderApplication {
     public void init() {
         detectorConfig = this.detectorConfigBean;
         recorderConfig = this.recorderConfigBean;
+        savePid();
+    }
+
+    private static void savePid() {
+        // 获取进程pid，保存至程序运行目录的 pid.txt 文件中
+        String name = ManagementFactory.getRuntimeMXBean().getName();
+        logger.debug("name:{}", name);
+        String pid = name.split("@")[0];
+        logger.debug("pid:{}", pid);
+        try {
+            FileUtils.writeStringToFile(new File("./pid.txt"), pid, "UTF-8");
+        } catch (IOException e) {
+            logger.error("pid保存失败", e);
+        }
     }
 
     public static void main(String[] args) {
